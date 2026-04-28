@@ -9,7 +9,10 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Voice Bridge uses voice playback features for communication support."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -40,6 +43,16 @@
         }
       ]
     ],
+    "extra": {
+      "firebaseApiKey": "AIzaSyBDKVVGgBmXuXKdfgZGpxYlckjfH0r5IsE",
+      "firebaseAuthDomain": "voicebridge-9b831.firebaseapp.com",
+      "firebaseProjectId": "voicebridge-9b831",
+      "firebaseStorageBucket": "voicebridge-9b831.firebasestorage.app",
+      "firebaseMessagingSenderId": "617294389624",
+      "firebaseAppId": "1:617294389624:web:55668cf16828ea91e4688d",
+      "firebaseMeasurementId": "G-SJ7W11LMJJ",
+      "firebaseVapidKey": ""
+    },
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true

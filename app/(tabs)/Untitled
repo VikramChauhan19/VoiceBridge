@@ -1,0 +1,9 @@
+cd app
+
+mkdir screens
+mkdir components
+mkdir services
+mkdir utils
+mkdir constants
+
+cd ..
