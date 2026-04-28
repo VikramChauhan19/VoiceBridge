@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAppStore } from '@/src/store/appStore';
 import { useChatMessages } from '@/src/features/chat/hooks/useChatMessages';
 import { firebaseChatTransport } from '@/src/features/chat/services/chatTransport';
@@ -17,13 +17,12 @@ export function useBridgeChatController() {
   const [isSending, setIsSending] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
   const [isSpeakingNow, setIsSpeakingNow] = useState(false);
-  const finalProcessedRef = useRef('');
-
   useEffect(() => {
-    if (speech.liveText) {
-      setMessageText(speech.liveText);
+    const recognizedText = `${speech.finalText} ${speech.liveText}`.trim();
+    if (recognizedText) {
+      setMessageText(recognizedText);
     }
-  }, [speech.liveText]);
+  }, [speech.finalText, speech.liveText]);
 
   const sendMessage = useCallback(async (text: string, source: MessageSource): Promise<boolean> => {
     const clean = text.trim();
@@ -47,25 +46,6 @@ export function useBridgeChatController() {
       setIsSending(false);
     }
   }, [isSending, language, transport, userId]);
-
-  useEffect(() => {
-    const fullFinal = speech.finalText.trim();
-    if (!fullFinal) return;
-
-    const previous = finalProcessedRef.current;
-    if (fullFinal === previous) return;
-
-    let delta = fullFinal;
-    if (fullFinal.startsWith(previous)) {
-      delta = fullFinal.slice(previous.length).trim();
-    }
-
-    finalProcessedRef.current = fullFinal;
-    if (!delta) return;
-
-    setMessageText(delta);
-    void sendMessage(delta, 'spoken');
-  }, [sendMessage, speech.finalText]);
 
   const sendAndSpeak = useCallback(async (text: string) => {
     const clean = text.trim();

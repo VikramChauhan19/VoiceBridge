@@ -23,18 +23,13 @@ function formatMessageTime(timestampMs: number): string {
 export function ChatScreen() {
   const { t } = useTranslation();
   const {
-    language,
     messages,
     userId,
     messageText,
     setMessageText,
     sendAndSpeak,
     speakWithAiStyle,
-    stopCurrentSpeech,
-    clearChat,
     isSending,
-    isClearing,
-    isSpeakingNow,
     speech,
     statusError,
   } = useBridgeChatController();
@@ -90,15 +85,38 @@ export function ChatScreen() {
       </ScrollView>
 
       <View style={styles.inputContainer}>
-        <TextInput
-          value={messageText}
-          onChangeText={setMessageText}
-          placeholder={t("chatInputPlaceholder")}
-          placeholderTextColor={palette.mutedText}
-          style={styles.input}
-          accessibilityLabel="Chat message input"
-          multiline
-        />
+        <View style={styles.composerRow}>
+          <TextInput
+            value={messageText}
+            onChangeText={setMessageText}
+            placeholder={t("chatInputPlaceholder")}
+            placeholderTextColor={palette.mutedText}
+            style={styles.input}
+            accessibilityLabel="Chat message input"
+            multiline
+          />
+          <Pressable
+            style={({ pressed }) => [
+              styles.micBtn,
+              speech.isListening && styles.micBtnActive,
+              pressed && styles.micBtnPressed,
+              !speech.isSupported && styles.micBtnDisabled,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={speech.isListening ? "Stop listening" : "Start listening"}
+            onPress={() =>
+              void (speech.isListening ? Promise.resolve(speech.stopListening()) : speech.startListening())
+            }
+            disabled={!speech.isSupported}
+          >
+            <MaterialIcons
+              name={speech.isListening ? "stop" : "mic"}
+              size={22}
+              color={palette.text}
+            />
+          </Pressable>
+        </View>
+        {statusError ? <Text style={styles.errorText}>{statusError}</Text> : null}
         <PrimaryButton
           label={isSending ? t("sending") : t("sendAndSpeak")}
           accessibilityLabel="Send and speak chat message"
@@ -177,6 +195,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   input: {
+    flex: 1,
     minHeight: 78,
     borderRadius: 16,
     borderColor: palette.border,
@@ -187,6 +206,38 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 14,
     textAlignVertical: "top",
+  },
+  composerRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 10,
     marginBottom: 12,
+  },
+  micBtn: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 1,
+    borderColor: palette.border,
+    backgroundColor: palette.surface,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+  micBtnActive: {
+    backgroundColor: "#DC2626",
+    borderColor: "#FCA5A5",
+  },
+  micBtnPressed: {
+    opacity: 0.85,
+  },
+  micBtnDisabled: {
+    opacity: 0.5,
+  },
+  errorText: {
+    color: palette.danger,
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 8,
   },
 });

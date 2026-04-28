@@ -11,10 +11,13 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "Voice Bridge uses voice playback features for communication support."
+        "NSMicrophoneUsageDescription": "Voice Bridge uses your microphone for speech-to-text in chat."
       }
     },
     "android": {
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -30,6 +33,13 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "@react-native-voice/voice",
+        {
+          "microphonePermission": "Voice Bridge uses your microphone to convert speech into chat text.",
+          "speechRecognitionPermission": "Voice Bridge uses speech recognition to transcribe your voice into text."
+        }
+      ],
       [
         "expo-splash-screen",
         {
