@@ -2,15 +2,15 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAppStore } from '@/src/store/appStore';
 import { useChatMessages } from '@/src/features/chat/hooks/useChatMessages';
 import { firebaseChatTransport } from '@/src/features/chat/services/chatTransport';
-import { useWebSpeechToText } from '@/src/features/voice/hooks/useWebSpeechToText';
+import { useSpeechToText } from '@/src/features/voice/hooks/useSpeechToText';
 import { isSpeaking, speakWithAiStyle, stopSpeaking } from '@/src/features/voice/services/textToSpeech';
 import { MessageSource } from '@/src/types';
 
 export function useBridgeChatController() {
   const transport = useMemo(() => firebaseChatTransport, []);
   const { messages, error: streamError } = useChatMessages(transport);
-  const { language, userId } = useAppStore();
-  const speech = useWebSpeechToText(language);
+  const { language, speechRate, setLanguage, setSpeechRate, userId } = useAppStore();
+  const speech = useSpeechToText(language);
 
   const [messageText, setMessageText] = useState('');
   const [composerError, setComposerError] = useState<string | null>(null);
@@ -55,10 +55,10 @@ export function useBridgeChatController() {
     if (!sent) return;
     // Mute user communication flow: typed send also speaks aloud.
     setIsSpeakingNow(true);
-    await speakWithAiStyle(clean, language);
+    await speakWithAiStyle(clean, language, speechRate);
     setIsSpeakingNow(false);
     setMessageText('');
-  }, [isSending, language, sendMessage]);
+  }, [isSending, language, sendMessage, speechRate]);
 
   const stopCurrentSpeech = useCallback(async () => {
     await stopSpeaking();
@@ -93,6 +93,9 @@ export function useBridgeChatController() {
 
   return {
     language,
+    setLanguage,
+    speechRate,
+    setSpeechRate,
     messages,
     userId,
     messageText,
@@ -107,5 +110,6 @@ export function useBridgeChatController() {
     isSpeakingNow,
     speech,
     statusError,
+    streamError,
   };
 }

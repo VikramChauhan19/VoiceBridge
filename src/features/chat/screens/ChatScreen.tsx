@@ -1,8 +1,11 @@
 import { useBridgeChatController } from "@/src/features/chat/hooks/useBridgeChatController";
 import { PrimaryButton } from "@/src/shared/components/PrimaryButton";
+import { LanguageSelector } from "@/src/shared/components/LanguageSelector";
+import { SpeechRateSelector } from "@/src/shared/components/SpeechRateSelector";
 import { palette } from "@/src/theme/colors";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
+import { useEffect } from "react";
 import {
     KeyboardAvoidingView, Platform,
     Pressable,
@@ -21,18 +24,31 @@ function formatMessageTime(timestampMs: number): string {
 }
 
 export function ChatScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const {
+    language,
+    setLanguage,
+    speechRate,
+    setSpeechRate,
     messages,
     userId,
     messageText,
     setMessageText,
     sendAndSpeak,
     speakWithAiStyle,
+    stopCurrentSpeech,
+    clearChat,
     isSending,
+    isClearing,
+    isSpeakingNow,
     speech,
     statusError,
+    streamError,
   } = useBridgeChatController();
+
+  useEffect(() => {
+    void i18n.changeLanguage(language);
+  }, [i18n, language]);
 
   return (
     <KeyboardAvoidingView
@@ -46,6 +62,16 @@ export function ChatScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={true}
       >
+        <LanguageSelector selectedLanguage={language} onChangeLanguage={setLanguage} />
+        <SpeechRateSelector value={speechRate} onChange={setSpeechRate} />
+        <View style={styles.statusStrip}>
+          <Text style={styles.statusStripText}>
+            {streamError ? streamError : t("chatSyncLive")}
+          </Text>
+          <Text style={styles.statusStripText}>
+            {speech.isListening ? t("listeningNow") : t("listeningStopped")}
+          </Text>
+        </View>
         {messages.map((item) => {
           const mine = item.senderId === userId;
           return (
@@ -69,7 +95,7 @@ export function ChatScreen() {
                   accessibilityRole="button"
                   accessibilityLabel="Speak this chat message"
                   onPress={() =>
-                    void speakWithAiStyle(item.text, item.language)
+                    void speakWithAiStyle(item.text, item.language, speechRate)
                   }
                 >
                   <MaterialIcons
@@ -117,6 +143,36 @@ export function ChatScreen() {
           </Pressable>
         </View>
         {statusError ? <Text style={styles.errorText}>{statusError}</Text> : null}
+        <View style={styles.quickActionsRow}>
+          <View style={styles.quickActionItem}>
+            <PrimaryButton
+              label={speech.isListening ? t("stopListening") : t("startListening")}
+              accessibilityLabel={speech.isListening ? "Stop listening to voice" : "Start listening to voice"}
+              onPress={() =>
+                void (speech.isListening ? Promise.resolve(speech.stopListening()) : speech.startListening())
+              }
+              disabled={!speech.isSupported}
+            />
+          </View>
+          <View style={styles.quickActionItem}>
+            <PrimaryButton
+              label={t("stopSpeech")}
+              accessibilityLabel="Stop speech output"
+              onPress={() => void stopCurrentSpeech()}
+              disabled={!isSpeakingNow}
+            />
+          </View>
+        </View>
+        <View style={styles.quickActionsRow}>
+          <View style={styles.quickActionItem}>
+            <PrimaryButton
+              label={isClearing ? `${t("clearChat")}...` : t("clearChat")}
+              accessibilityLabel="Clear full chat history"
+              onPress={() => void clearChat()}
+              disabled={isClearing}
+            />
+          </View>
+        </View>
         <PrimaryButton
           label={isSending ? t("sending") : t("sendAndSpeak")}
           accessibilityLabel="Send and speak chat message"
@@ -141,6 +197,22 @@ const styles = StyleSheet.create({
   listContent: {
     gap: 10,
     paddingBottom: 120, // Ensure last messages are visible above input bar
+  },
+  statusStrip: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: palette.surface,
+    borderRadius: 14,
+    borderColor: palette.border,
+    borderWidth: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  statusStripText: {
+    color: palette.success,
+    fontSize: 14,
+    fontWeight: "700",
   },
   bubble: {
     maxWidth: "84%",
@@ -176,9 +248,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   speakBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: palette.surface,
     borderColor: palette.border,
     borderWidth: 1,
@@ -236,8 +308,15 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: palette.danger,
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: "600",
     marginBottom: 8,
+  },
+  quickActionsRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  quickActionItem: {
+    flex: 1,
   },
 });
