@@ -2,17 +2,19 @@ import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { MicButton } from '@/src/features/voice/components/MicButton';
-import { useWebSpeechToText } from '@/src/features/voice/hooks/useWebSpeechToText';
-import { speakWithAiStyle } from '@/src/features/voice/services/textToSpeech';
+import { useSpeechToText } from '@/src/features/voice/hooks/useSpeechToText';
+import { speakWithAiStyle, stopSpeaking } from '@/src/features/voice/services/textToSpeech';
 import { useAppStore } from '@/src/store/appStore';
 import { PrimaryButton } from '@/src/shared/components/PrimaryButton';
+import { LanguageSelector } from '@/src/shared/components/LanguageSelector';
+import { SpeechRateSelector } from '@/src/shared/components/SpeechRateSelector';
 import { palette } from '@/src/theme/colors';
 
 export function VoiceBridgeScreen() {
   const { t, i18n } = useTranslation();
-  const { language, setLanguage } = useAppStore();
+  const { language, setLanguage, speechRate, setSpeechRate } = useAppStore();
   const [text, setText] = useState('');
-  const speech = useWebSpeechToText(language);
+  const speech = useSpeechToText(language);
 
   useEffect(() => {
     void i18n.changeLanguage(language);
@@ -26,7 +28,7 @@ export function VoiceBridgeScreen() {
   }, [speech.finalText, speech.liveText]);
 
   const onSpeak = async () => {
-    await speakWithAiStyle(text, language);
+    await speakWithAiStyle(text, language, speechRate);
   };
 
   return (
@@ -34,20 +36,8 @@ export function VoiceBridgeScreen() {
       <Text style={styles.title}>{t('appTitle')}</Text>
       <Text style={styles.subtitle}>{t('appSubtitle')}</Text>
 
-      <View style={styles.toggleRow}>
-        <PrimaryButton
-          label={t('english')}
-          accessibilityLabel="Switch language to English"
-          onPress={() => setLanguage('en')}
-          disabled={language === 'en'}
-        />
-        <PrimaryButton
-          label={t('hindi')}
-          accessibilityLabel="Switch language to Hindi"
-          onPress={() => setLanguage('hi')}
-          disabled={language === 'hi'}
-        />
-      </View>
+      <LanguageSelector selectedLanguage={language} onChangeLanguage={setLanguage} />
+      <SpeechRateSelector value={speechRate} onChange={setSpeechRate} />
 
       <Text style={styles.sectionTitle}>{t('speechToText')}</Text>
       <MicButton
@@ -76,6 +66,9 @@ export function VoiceBridgeScreen() {
           <Text style={styles.warningText}>{speech.availabilityReason}</Text>
         ) : null}
         {speech.error ? <Text style={styles.errorText}>{speech.error}</Text> : null}
+        <Text style={styles.statusText}>
+          {speech.isListening ? t('listeningNow') : t('listeningStopped')}
+        </Text>
         {speech.liveText ? <Text style={styles.liveText}>{speech.liveText}</Text> : null}
       </View>
 
@@ -95,6 +88,11 @@ export function VoiceBridgeScreen() {
         accessibilityLabel="Convert text to voice"
         onPress={onSpeak}
         disabled={!text.trim()}
+      />
+      <PrimaryButton
+        label={t('stopSpeech')}
+        accessibilityLabel="Stop voice output"
+        onPress={() => void stopSpeaking()}
       />
       <PrimaryButton
         label={t('clearText')}
@@ -130,13 +128,10 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: palette.text,
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
     marginTop: 6,
     marginBottom: 10,
-  },
-  toggleRow: {
-    gap: 6,
   },
   controls: {
     marginTop: 6,
@@ -149,6 +144,12 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 12,
     minHeight: 54,
+  },
+  statusText: {
+    color: palette.success,
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 6,
   },
   warningText: {
     color: '#F59E0B',
